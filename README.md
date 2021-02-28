@@ -331,3 +331,68 @@ The `NEW_ARTICLE_ALERT_SENT` message is of the form:
   "_id": "ryeyuiy278164yqgiyuq",
 }
 ```
+
+### [message_queue](./message_queue)
+
+This is message queue service that has two methods and a mongodb for persistence of messages if the particular messages are in a persistent topic.
+
+The methods are viar [gRPC](https://grpc.io/). They include:
+
+#### sendMessage
+
+This method allows other apps to send JSON (any string is possible but a proper JSON is recommended) strings
+in a unary (request-response) communication method.
+
+The sendMessage method is of the form:
+
+```protobuf
+rpc sendMessage(ClientMessage) returns (ServerAcknowledgement)
+```
+
+The `ClientMessage` gRPC message is of the form:
+
+```protobuf
+message ClientMessage {
+  string topic = 1;
+  string data = 2;
+  bool isPersistent = 3;
+}
+```
+
+The `ServerAcknowledgement` gRPC message is of the form:
+
+```protobuf
+message ServerAcknowledgement {
+  bool received = 1;
+}
+```
+
+#### subscribe
+
+The `subscribe` method allows other apps to connect to the message_queue service via a server stream
+and receive new messages, one after the other.
+
+Do note that persistent messages can fillup the mongodb if there is no acknowledgement that allows the
+message_queue service to delete the consumed messages.
+
+It is of the form:
+
+```protobuf
+rpc susbcribe(Topic) returns (stream ServerMessage)
+```
+
+The `Topic` gRPC message is of the form:
+
+```protobuf
+message Topic {
+  string name = 1;
+}
+```
+
+The `ServerMessage` gRPC message is of the form:
+
+```protobuf
+message ServerMessage {
+  string data = 1;
+}
+```
