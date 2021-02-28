@@ -65,29 +65,25 @@ The users are saved in a [postgreSQL](https://www.postgresql.org/) database.
 #### Interface with [message queue service](./message-queue)
 
 At the back, it interfaces with the [message queue service](./message-queue) via [gRPC](https://grpc.io/) inorder
-to respond to any `AuthRequest` events sent by other services that are pending fulfillment in the queue.
+to respond to any `AUTH_REQUEST` messages sent by other services that are pending fulfillment in the queue.
 
-It listens to a bidirectional stream from the [message queue service](./message-queue), receiving `AuthRequest` objects and responding by calling a method `fulfillAuthRequest` on the [message queue service](./message-queue).
+It subscribes to that topic `AUTH_REQUEST` topic by calling the `subscribe` method of message_queue and responds by sending a `AUTH_FULFILLMENT` message corresponding to the `AUTH_REQUEST` message by calling the `sendMessage`
+method of the message_queue.
 
-The `AuthRequest` type is of the form:
+The `AUTH_REQUEST` message is of the form:
 
-```protobuf
-message AuthRequest {
-    string token = 1;
+```JSON
+{
+  "token": "<token from client that got token from authenticator service>"
 }
 ```
 
-The `fulfillAuthRequest` method is of the form:
+The `AUTH_FULFILLMENT` message is of the form:
 
-```protobuf
-rpc fulfillAuthRequest(AuthRequest) returns (AuthFulfillment);
-```
-
-where `AuthFulfillment` is of the form:
-
-```protobuf
-message AuthFulfillment {
-    bool isValid = 1;
+```JSON
+{
+  "token": "<token from client that got token from authenticator service>",
+  "is_valid": true // or false
 }
 ```
 
@@ -103,7 +99,7 @@ The payload is of the format:
 }
 ```
 
-**The GET method is disabled.**
+**The GET method is disabled for now.**
 
 #### `/authentication`
 
@@ -140,7 +136,10 @@ websockets and REST API. At the back, it interfaces with the [message queue serv
 
 #### `/auth`
 
-It sends `AuthRequest` events to the [message queue service](./message-queue) service when a token is passed to the `/auth` endpoint.
+It subscribes to the `AUTH_FULFILLMENT` topic using the `sendMessage` method of [message queue service](./message-queue) and starts checking for a given token. It waits for a given timeout
+before assuming that the auth request was not answered for whatever reason. It returns a timeout error to the client.
+
+Immediately after subscribing to the `AUTH_FULFILLMENT` topic, it sends an `AUTH_REQUEST` message by calling the `sendMessage`to the [message queue service](./message-queue) service when a token is passed to the`/auth` endpoint.
 
 The POST payload to that endpoint is in the format:
 
