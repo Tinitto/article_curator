@@ -334,9 +334,9 @@ The `NEW_ARTICLE_ALERT_SENT` message is of the form:
 
 ### [message_queue](./message_queue)
 
-This is message queue service that has two methods and a mongodb for persistence of messages if the particular messages are in a persistent topic.
+This is message queue service that has two methods and a mongodb for persistence of messages if the particular messages are in a persistent topic. It is built on [nodejs](https://nodejs.org/en/).
 
-The methods are viar [gRPC](https://grpc.io/). They include:
+The methods are via [gRPC](https://grpc.io/). They include:
 
 #### sendMessage
 
