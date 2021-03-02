@@ -346,7 +346,10 @@ in a unary (request-response) communication method.
 The sendMessage method is of the form:
 
 ```protobuf
-rpc sendMessage(ClientMessage) returns (ServerAcknowledgement)
+service messageQueue{
+  ...
+  rpc sendMessage(ClientMessage) returns (ServerAcknowledgement)
+}
 ```
 
 The `ClientMessage` gRPC message is of the form:
@@ -378,7 +381,10 @@ message_queue service to delete the consumed messages.
 It is of the form:
 
 ```protobuf
-rpc susbcribe(Topic) returns (stream ServerMessage)
+service messageQueue{
+  ...
+  rpc susbcribe(Topic) returns (stream ServerMessage)
+}
 ```
 
 The `Topic` gRPC message is of the form:
