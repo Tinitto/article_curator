@@ -68,7 +68,7 @@ The users are saved in a [postgreSQL](https://www.postgresql.org/) database.
 At the back, it interfaces with the [message queue service](./message-queue) via [gRPC](https://grpc.io/) inorder
 to respond to any `AUTH_REQUEST` messages sent by other services that are pending fulfillment in the queue.
 
-It subscribes to that topic `AUTH_REQUEST` topic by calling the `subscribe` method of message_queue and responds by sending a `AUTH_FULFILLMENT` message corresponding to the `AUTH_REQUEST` message by calling the `sendMessage`
+It subscribes to that topic `AUTH_REQUEST` topic by calling the `subscribeToTopic` method of message_queue and responds by sending a `AUTH_FULFILLMENT` message corresponding to the `AUTH_REQUEST` message by calling the `sendMessage`
 method of the message_queue.
 
 The `AUTH_REQUEST` message is of the form:
@@ -370,9 +370,9 @@ message ServerAcknowledgement {
 }
 ```
 
-#### subscribe
+#### subscribeToTopic
 
-The `subscribe` method allows other apps to connect to the message_queue service via a server stream
+The `subscribeToTopic` method allows other apps to connect to the message_queue service via a server stream
 and receive new messages, one after the other.
 
 Do note that persistent messages can fillup the mongodb if there is no acknowledgement that allows the

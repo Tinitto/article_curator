@@ -2,9 +2,9 @@ syntax = "proto3";
 
 package articleCurator;
 
-service messageQueue {
+service MessageQueue {
     rpc sendMessage (ClientMessage) returns (ServerAcknowledgement);
-    rpc susbcribe(Topic) returns (stream ServerMessage);
+    rpc subscribeToTopic(Topic) returns (stream ServerMessage);
 }
 
 message ClientMessage {

@@ -4,8 +4,9 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "jest": "wait-on tcp:38000 && jest --detectOpenHandles",
+    "start": "node server.js",
+    "test": "npm start & npm run jest"
   },
   "keywords": [],
   "author": "",
@@ -13,5 +14,10 @@
   "dependencies": {
     "@grpc/proto-loader": "^0.5.6",
     "grpc": "^1.24.5"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.20",
+    "jest": "26.6.3",
+    "wait-on": "^5.2.1"
   }
 }

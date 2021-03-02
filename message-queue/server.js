@@ -1,10 +1,13 @@
 /** server file for the message queue service */
-
+const path = require("path");
 const grpc = require("grpc");
 const protoLoader = require("@grpc/proto-loader");
 
 // Load gRPC package definitions
-const packageDefinition = protoLoader.loadSync("../article_curator.proto", {});
+const packageDefinition = protoLoader.loadSync(
+  path.resolve("../article_curator.proto"),
+  {}
+);
 const grpcObject = grpc.loadPackageDefinition(packageDefinition);
 const articleCurator = grpcObject.articleCurator;
 
@@ -13,17 +16,18 @@ const server = new grpc.Server();
 server.bind("0.0.0.0:38000", grpc.ServerCredentials.createInsecure());
 
 // Add services to the Server
-server.addService(articleCurator.messageQueue.service, {
+server.addService(articleCurator.MessageQueue.service, {
   sendMessage,
-  subscribe,
+  subscribeToTopic,
 });
 
 // start the Server
 server.start();
 
 function sendMessage(call, callback) {
-  console.log(call);
+  callback(null, { received: true });
 }
-function subscribe(call, callback) {
-  console.log(call);
+
+function subscribeToTopic(call, callback) {
+  callback(null, { data: JSON.stringify({ hi: "hello" }) });
 }
