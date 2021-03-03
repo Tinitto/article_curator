@@ -4,7 +4,7 @@ package articleCurator;
 
 service MessageQueue {
     rpc sendMessage (ClientMessage) returns (ServerAcknowledgement);
-    rpc subscribeToTopic(Topic) returns (stream ServerMessage);
+    rpc subscribeToTopic(stream ClientResponse) returns (stream ServerMessage);
 }
 
 message ClientMessage {
@@ -17,10 +17,12 @@ message ServerAcknowledgement {
     bool received = 1;
 }
 
-message Topic {
-    string name = 1;
+message ClientResponse {
+    string type = 1;
+    string payload = 2;
 }
 
 message ServerMessage {
-    string data = 1;
+    string id = 1;
+    string data = 2;
 }

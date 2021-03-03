@@ -194,7 +194,7 @@ On creation of the article, the 'author' database table is upserted with the new
 Also on creation the 'topic' database table is upserted with the topic details
 and that topic is linked to the article record.
 
-Also on creation, a `NEW_ARTICLE` message is sent to the [message_queue](/message_queue) under that topic of `NEW_ARTICLE`. This message is persistent.
+Also on creation, a `NEW_ARTICLE` message is sent to the [message_queue](/message_queue) under that topic of `NEW_ARTICLE`.
 
 The `NEW_ARTICLE` message is of the form:
 
@@ -312,29 +312,31 @@ const topics = {
 The notifier is connected to the `NEW_ARTICLE` topic of the [message_queue service](/message_queue). In this topic, the message_queue queries the mongodb for all new_article records and sends them back one by one.
 
 In the call back for the resulting stream, it loops through the clients under the topic of the new article received, and sends them the alert of the new article.
-For each `NEW_ARTICLE` message, it sends a `NEW_ARTICLE_ALERT_SENT` message to the message_queue service alerting it that it has alerted the clients. The message queue in turn deletes the new_article record in the mongodb database.
+For each `NEW_ARTICLE` message, it sends an acknowledgement message to the message_queue service alerting it that it has alerted the clients. The message queue in turn deletes the new_article record in the mongodb database.
 
 The `NEW_ARTICLE` message sent via the stream comes with the id of the artice in the mongodb. It is of the form:
 
 ```JSON
 {
-  "_id": "ryeyuiy278164yqgiyuq", // some UUID managed by mongodb
-  "article_id": 23267834,
-  "article_title": "<the article title>"
+  "id": "ryeyuiy278164yqgiyuq", // some UUID managed by mongodb
+  "data": { "id": 23267834,
+            "title": "<the article title>"
+            }
 }
 ```
 
-The `NEW_ARTICLE_ALERT_SENT` message is of the form:
+The `ACKNOWLEDGEMENT` message is of the form:
 
 ```JSON
 {
-  "_id": "ryeyuiy278164yqgiyuq",
+  "type": "ACKNOWLEDGEMENT",
+  "payload": "ryeyuiy278164yqgiyuq"
 }
 ```
 
 ### [message_queue](./message_queue)
 
-This is message queue service that has two methods and a mongodb for persistence of messages if the particular messages are in a persistent topic. It is built on [nodejs](https://nodejs.org/en/).
+This is message queue service that has two methods and a mongodb for persistence of messages. It is built on [nodejs](https://nodejs.org/en/).
 
 The methods are via [gRPC](https://grpc.io/). They include:
 
@@ -358,7 +360,6 @@ The `ClientMessage` gRPC message is of the form:
 message ClientMessage {
   string topic = 1;
   string data = 2;
-  bool isPersistent = 3;
 }
 ```
 
@@ -372,26 +373,25 @@ message ServerAcknowledgement {
 
 #### subscribeToTopic
 
-The `subscribeToTopic` method allows other apps to connect to the message_queue service via a server stream
-and receive new messages, one after the other.
-
-Do note that persistent messages can fillup the mongodb if there is no acknowledgement that allows the
-message_queue service to delete the consumed messages.
+The `subscribeToTopic` method allows other apps to connect to the message_queue service via a bidirectional stream
+and receive new messages, one after the other. The client apps should in turn can send back `ACKNOWLEDGMENT` messages
+or else the same message will be sent over and over again.
 
 It is of the form:
 
 ```protobuf
 service messageQueue{
   ...
-  rpc susbcribe(Topic) returns (stream ServerMessage)
+  rpc susbcribeToTopic(stream ClientResponse) returns (stream ServerMessage)
 }
 ```
 
 The `Topic` gRPC message is of the form:
 
 ```protobuf
-message Topic {
-  string name = 1;
+message ClientResponse {
+    string type = 1;
+    string payload = 2;
 }
 ```
 
@@ -399,6 +399,7 @@ The `ServerMessage` gRPC message is of the form:
 
 ```protobuf
 message ServerMessage {
-  string data = 1;
+  string id = 1;
+  string data = 2;
 }
 ```
