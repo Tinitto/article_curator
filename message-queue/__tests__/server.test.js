@@ -23,7 +23,6 @@ describe("message-queue server", () => {
         {
           topic: "test",
           data: JSON.stringify({ id: 2, last_name: "Doe", first_name: "John" }),
-          isPersistent: true,
         },
         (err, response) => {
           expect(response).toMatchObject({

@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "jest": "wait-on tcp:38000 && jest --detectOpenHandles",
+    "jest": "wait-on tcp:38000 && jest --forceExit --detectOpenHandles",
     "start": "node server.js",
     "test": "npm start & npm run jest"
   },
