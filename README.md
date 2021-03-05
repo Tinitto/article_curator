@@ -9,8 +9,7 @@ user who has subscribed to that topic is alerted when any article is added to th
 - [Nodejs](https://nodejs.org/en/)
   - [Feathersjs](https://feathersjs.com/)
   - [ws](https://www.npmjs.com/package/ws)
-- [MongoDB](https://www.mongodb.com/)
-  - [Mongoose ORM](https://mongoosejs.com/docs/)
+- [Lokijs](https://github.com/techfort/LokiJS/)
 - [Postgres](https://www.postgresql.org/)
   - [SQLAlchemy](https://www.sqlalchemy.org/)
   - [Objectionjs](https://vincit.github.io/objection.js/)
@@ -25,7 +24,7 @@ user who has subscribed to that topic is alerted when any article is added to th
 ## Design
 
 It is composed of four back end services connected via grpc, and one front end service. One of those services acts like a message queue
-to which all events from other services are sent, and persisted using mongodb, and when consumed
+to which all events from other services are sent, and persisted using nosql database, and when consumed
 are deleted from the queue.
 
 _The diagram below was drawn using [diagrams.net](https://diagrams.net). [Here](./.designs/article_curator.xml) is the original file_
@@ -309,16 +308,16 @@ const topics = {
 }
 ```
 
-The notifier is connected to the `NEW_ARTICLE` topic of the [message_queue service](/message_queue). In this topic, the message_queue queries the mongodb for all new_article records and sends them back one by one.
+The notifier is connected to the `NEW_ARTICLE` topic of the [message_queue service](/message_queue). In this topic, the message_queue queries the nosql database for all new_article records and sends them back one by one.
 
 In the call back for the resulting stream, it loops through the clients under the topic of the new article received, and sends them the alert of the new article.
-For each `NEW_ARTICLE` message, it sends an acknowledgement message to the message_queue service alerting it that it has alerted the clients. The message queue in turn deletes the new_article record in the mongodb database.
+For each `NEW_ARTICLE` message, it sends an acknowledgement message to the message_queue service alerting it that it has alerted the clients. The message queue in turn deletes the new_article record in the nosql database.
 
-The `NEW_ARTICLE` message sent via the stream comes with the id of the artice in the mongodb. It is of the form:
+The `NEW_ARTICLE` message sent via the stream comes with the id of the artice in the nosql database. It is of the form:
 
 ```JSON
 {
-  "id": "ryeyuiy278164yqgiyuq", // some UUID managed by mongodb
+  "id": "ryeyuiy278164yqgiyuq", // some UUID managed by nosql database
   "data": { "id": 23267834,
             "title": "<the article title>"
             }
@@ -336,7 +335,7 @@ The `ACKNOWLEDGEMENT` message is of the form:
 
 ### [message_queue](./message_queue)
 
-This is message queue service that has two methods and a mongodb for persistence of messages. It is built on [nodejs](https://nodejs.org/en/).
+This is message queue service that has two methods and a nosql database for persistence of messages. It is built on [nodejs](https://nodejs.org/en/).
 
 The methods are via [gRPC](https://grpc.io/). They include:
 
@@ -403,3 +402,9 @@ message ServerMessage {
   string data = 2;
 }
 ```
+
+## A Few Notes
+
+gRPC seems to have a few gotchas:
+
+- Errors seem to be thrown silently. Sometimes, if one uses a reserved word as a variable in the proto file, the server will fail silently

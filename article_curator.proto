@@ -18,7 +18,7 @@ message ServerAcknowledgement {
 }
 
 message ClientResponse {
-    string type = 1;
+    string messageType = 1;
     string payload = 2;
 }
 

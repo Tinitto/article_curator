@@ -8,48 +8,7 @@ const PORT = 38000;
 const STREAM_INTERVAL = 1000;
 
 // sample
-const DATA = [
-  {
-    id: "ereyuoq",
-    topic: "NEW_ARTICLE",
-    data: {
-      id: 343,
-      title: "A Great Many Tales",
-    },
-  },
-  {
-    id: "467uii63571",
-    topic: "NEW_ARTICLE",
-    data: {
-      id: 343,
-      title: "A Great Many Tales",
-    },
-  },
-  {
-    id: "6ghatsa",
-    topic: "NEW_ARTICLE",
-    data: {
-      id: 43,
-      title: "Indigo",
-    },
-  },
-  {
-    id: "536uy42",
-    topic: "NEW_ARTICLE",
-    data: {
-      id: 34223,
-      title: "The River",
-    },
-  },
-  {
-    id: "76964guewq",
-    topic: "NEW_ARTICLE",
-    data: {
-      id: 3413,
-      title: "A Tale",
-    },
-  },
-];
+let DATA = [];
 
 // Load gRPC package definitions
 const packageDefinition = protoLoader.loadSync(
@@ -116,19 +75,38 @@ function sendMessage(call, callback) {
  * @param {object} call - the call object from the bidirectional stream request
  */
 function subscribeToTopic(call) {
-  const topic = call.request;
+  let topic;
+  let intervalHandle;
+
+  call.on("error", (err) => {
+    console.error(err);
+  });
+
+  call.on("status", (status) => {
+    console.log(status);
+  });
+
   call.on("data", function (clientResponse) {
-    if (clientResponse.type === "ACKNOWLEDGMENT") {
+    if (clientResponse.messageType === "TOPIC") {
+      topic = clientResponse.payload;
+
+      if (intervalHandle) {
+        clearInterval(intervalHandle);
+      }
+
+      intervalHandle = setInterval(() => {
+        const nextMessage = _getNextMessageForTopic(topic);
+        if (nextMessage) {
+          call.write({
+            id: nextMessage.id,
+            data: JSON.stringify(nextMessage.data),
+          });
+        }
+      }, STREAM_INTERVAL);
+    } else if (clientResponse.messageType === "ACKNOWLEDGMENT") {
       _deleteMessage(clientResponse.payload);
     }
   });
-
-  const intervalHandle = setInterval(() => {
-    const nextMessage = _getNextMessageForTopic(topic);
-    if (nextMessage) {
-      call.write({ data: JSON.stringify(_getNextMessageForTopic(topic)) });
-    }
-  }, STREAM_INTERVAL);
 
   call.on("end", function () {
     clearInterval(intervalHandle);
